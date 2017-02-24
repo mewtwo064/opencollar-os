@@ -43,10 +43,10 @@ OpenCollar Six source code and creative resource are covered and protected by st
 
 #### OpenSim Porting Information
 
-We target and test for OpenSim 0.8 (stable) and OpenSim 0.9 (unstable, master)
+For now, we target and test for OpenSim 0.8 and OpenSim 0.9. Support for OpenSim 0.8 will be ceased from the moment OpenSim 0.9 is released.
 
-This is the oscollar6 branch, which is a port of OpenCollar Six  
-Check out the oscollar3 branch for a port based on OpenCollar 3.99x
+This is the master branch, which is a port of OpenCollar Six  
+Check out the oscollar3 branch for a legacy port based on OpenCollar 3.99x
 
 There are some differences between the v3 and Six collars, for instance Six is much more optimized thanks to certain scripts being in seperate links (which can be optionally invisible, but you do need them seperate).
 
