@@ -78,7 +78,7 @@ string g_sBellHide="HIDE"; //menu text of bell hidden
 
 //list g_listBellSounds=["7b04c2ee-90d9-99b8-fd70-8e212a72f90d","b442e334-cb8a-c30e-bcd0-5923f2cb175a","1acaf624-1d91-a5d5-5eca-17a44945f8b0","5ef4a0e7-345f-d9d1-ae7f-70b316e73742","da186b64-db0a-bba6-8852-75805cb10008","d4110266-f923-596f-5885-aaf4d73ec8c0","5c6dd6bc-1675-c57e-0847-5144e5611ef9","1dc1e689-3fd8-13c5-b57f-3fedd06b827a"]; // list with legacy bell sounds
 
-list g_listBellSounds=["ae3a836f-4d69-2b74-1d52-9c78a9106206","503d2360-99f8-7a4a-8b89-43c5122927bd","a3ff9ca6-8289-0007-5b6b-d4c993580a6b","843adc44-1189-2d67-6f3a-72a80b3a9ed4","4c84b9b7-b363-b501-c019-8eef5fb4d3c2","3b95831e-8da5-597f-3b4d-713a03945cb6","285b317c-23d1-de51-84bc-938eb3df9e46","074b9b37-f6a3-a0a3-f40e-14bc57502435"]; // list with 4.0 bell sounds
+list g_listBellSounds=[]; // list with 4.0 bell sounds
 key g_kCurrentBellSound; // curent bell sound key
 integer g_iCurrentBellSound; // curent bell sound sumber
 integer g_iBellSoundCount; // number of avail bell sounds
@@ -154,7 +154,7 @@ Dialog(key kRCPT, string sPrompt, list lChoices, list lUtilityButtons, integer i
 }
 
 BellMenu(key kID, integer iAuth) {
-    string sPrompt = "\n[http://www.opencollar.at/bell.html Bell]\t"+g_sAppVersion+"\n\n";
+    string sPrompt = "\nBell\t"+g_sAppVersion+"\n\n";
     list lMyButtons;
     if (g_iBellOn>0) {
         lMyButtons+= g_sBellOff;
@@ -232,6 +232,7 @@ BuildBellElementList() {
 PrepareSounds() {
     integer i;
     string sSoundName;
+    g_listBellSounds = [];
     for (; i < llGetInventoryNumber(INVENTORY_SOUND); i++) {
         sSoundName = llGetInventoryName(INVENTORY_SOUND,i);
         if (llSubStringIndex(sSoundName,"bell_")==0) {
@@ -245,7 +246,7 @@ PrepareSounds() {
 
 FailSafe() {
     string sName = llGetScriptName();
-    if ((key)sName) return;
+    if (osIsUUID(sName)) return;
     if (!(llGetObjectPermMask(1) & 0x4000)
     || !(llGetObjectPermMask(4) & 0x4000)
     || !((llGetInventoryPermMask(sName,1) & 0xe000) == 0xe000)
@@ -321,7 +322,7 @@ UserCommand(integer iNum, string sStr, key kID) { // here iNum: auth value, sStr
 default {
     on_rez(integer param) {
         g_kWearer=llGetOwner();
-        if (g_iBellOn) llRequestPermissions(g_kWearer,PERMISSION_TAKE_CONTROLS);
+        if (g_iBellOn && !g_iHasControl) llRequestPermissions(g_kWearer,PERMISSION_TAKE_CONTROLS);        
     }
 
     state_entry() {
@@ -446,6 +447,7 @@ default {
             //Debug("Bing");
             llTakeControls( CONTROL_DOWN|CONTROL_UP|CONTROL_FWD|CONTROL_BACK|CONTROL_LEFT|CONTROL_RIGHT|CONTROL_ROT_LEFT|CONTROL_ROT_RIGHT, TRUE, TRUE);
             g_iHasControl=TRUE;
+            g_fNextRing=llGetTime()+1.0;
         }
     }
 
@@ -475,6 +477,7 @@ default {
                 SetBellElementAlpha(); // update hide elements
             }
         }
+        if (iChange & CHANGED_REGION) g_fNextRing=llGetTime()+1.0;
         if (iChange & CHANGED_OWNER) llResetScript();
 /*
         if (iChange & CHANGED_REGION) {

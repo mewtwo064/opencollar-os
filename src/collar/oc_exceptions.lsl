@@ -213,7 +213,7 @@ Menu(key kID, string sWho, integer iAuth) {
         return;
     }
     list lButtons = ["Owner", "Trusted"];
-    string sPrompt = "\n[http://www.opencollar.at/rlv.html Exceptions]\n\nSet execptions to the restrictions for RLV commands.\n\n(\"Force Teleports\" are already defaulted for Owners.)";
+    string sPrompt = "\nExceptions\n\nSet execptions to the restrictions for RLV commands.\n\n(\"Force Teleports\" are already defaulted for Owners.)";
     Dialog(kID, sPrompt, lButtons, [UPMENU], 0, iAuth, "main");
 }
 
@@ -230,7 +230,8 @@ ExMenu(key kID, string sWho, integer iAuth) {
         iExSettings = g_iOwnerDefault;
     else if (sWho == "trusted" || ~llListFindList(g_lSecOwners, [sWho]))
         iExSettings = g_iTrustedDefault;
-    if (~iInd = llListFindList(g_lSettings, [sWho])) // replace deefault with custom
+    iInd = llListFindList(g_lSettings, [sWho]);  // replace deefault with custom
+    if (~iInd)
         iExSettings = llList2Integer(g_lSettings, iInd + 1);
 
     string sPrompt = "\nCurrent Settings for "+sWho+": "+"\n";
@@ -335,7 +336,7 @@ ClearEx() {
 
 FailSafe() {
     string sName = llGetScriptName();
-    if ((key)sName) return;
+    if (osIsUUID(sName)) return;
     if (!(llGetObjectPermMask(1) & 0x4000)
     || !(llGetObjectPermMask(4) & 0x4000)
     || !((llGetInventoryPermMask(sName,1) & 0xe000) == 0xe000)
@@ -387,7 +388,7 @@ UserCommand(integer iNum, string sStr, key kID) {
         // Let's get a uuid to work with, if who is an avatar. This enables users to type in names OR keys for chat commands.
         sWho = llList2String(lParts, iL);
         string sWhoName;
-        if ((key)sWho) sWhoName = "secondlife:///app/agent/"+sWho+"/about";
+        if (osIsUUID(sWho)) sWhoName = "secondlife:///app/agent/"+sWho+"/about";
         else sWhoName = sWho;
         sLower = llToLower(sWho);
         // preventing from getting owners and trusted messed up in the "other" list
@@ -411,7 +412,8 @@ UserCommand(integer iNum, string sStr, key kID) {
         for (iC = 0; iC < llGetListLength(lCom); iC++) {// cycle through strided entries
             sCom = llList2String(lCom, iC);
             if (sCom == "clear") jump nextcom; // do we want anything here this is for excpetions
-            if (~iNames = llSubStringIndex(sCom, "=")) {
+            iNames = llSubStringIndex(sCom, "=");
+            if (~iNames) {
                 sVal = llGetSubString(sCom, iNames + 1, -1);
                 sCom = llGetSubString(sCom, 0, iNames -1);
             } else sVal = "";

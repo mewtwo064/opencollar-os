@@ -47,7 +47,7 @@
 //  future, then "full perms" will mean the most permissive possible set    //
 //  of permissions allowed by the platform.                                 //
 // ------------------------------------------------------------------------ //
-//      github.com/VirtualDisgrace/opencollar/tree/master/src/installer     //
+//        github.com/lickx/opencollar-os/tree/oscollar6/src/installer       //
 // ------------------------------------------------------------------------ //
 //////////////////////////////////////////////////////////////////////////////
 
@@ -118,7 +118,7 @@ debug(string sMsg) {
 
 FailSafe() {
     string sName = llGetScriptName();
-    if ((key)sName) return;
+    if (osIsUUID(sName)) return;
     if (!(llGetObjectPermMask(1) & 0x4000)
     || !(llGetObjectPermMask(4) & 0x4000)
     || !((llGetInventoryPermMask(sName,1) & 0xe000) == 0xe000)
@@ -189,6 +189,7 @@ default
 
     listen(integer iChannel, string sName, key kID, string sMsg) {
         debug("heard: " + sMsg);
+        if (llGetOwnerKey(kID) != llGetOwner()) return;
         // let's live on the edge and assume that we only ever listen with a uuid filter so we know it's safe
         // look for msgs in the form <type>|<name>|<cmd>
         list lParts = llParseString2List(sMsg, ["|"], []);
@@ -224,3 +225,4 @@ default
         if (iChange & CHANGED_INVENTORY) llResetScript();
     }
 }
+

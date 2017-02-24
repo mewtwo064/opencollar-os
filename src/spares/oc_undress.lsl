@@ -106,9 +106,9 @@ list DETACH_CLOTH_POINTS = [
     "xx", //"eyes", those are not to be detached, so we ignore them later
     "xx", //"hair", those are not to be detached, so we ignore them later
     "xx", //"shape", those are not to be detached, so we ignore them later
-    "Alpha",
-    "Tattoo",
-    "Physics"
+    "xx", //"alpha", those are not to be detached, so we ignore them later
+    "xx", //"tattoo", those are not to be detached, so we ignore them later
+    "xx" //"physics", those are not to be detached, so we ignore them later
         ];
 
 list ATTACH_POINTS = [//these are ordered so that their indices in the list correspond to the numbers returned by llGetAttached
@@ -250,7 +250,7 @@ Notify(key kID, string sMsg, integer iAlsoNotifyWearer)
 
 MainMenu(key kID, integer iAuth)
 {
-    string sPrompt = "\n[http://www.opencollar.at/undress.html Legacy Un/dress]\t"+g_sAppVersion;
+    string sPrompt = "\nLegacy Un/dress\t"+g_sAppVersion+"\nhttp://www.opencollar.at/undress.html";
     if (g_iAllLocked) sPrompt += "\n\nAll clothes and attachments are currently locked.";
     list lButtons;
     if (!g_iAllLocked) lButtons += ["☐ Lock All","Lock Clothing","Lock Attach."];
@@ -854,3 +854,4 @@ default {
         }*/
     }
 }
+

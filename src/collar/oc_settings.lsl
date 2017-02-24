@@ -109,6 +109,7 @@ list g_lSettings;
 integer g_iSayLimit = 1024; // lsl "say" string limit
 integer g_iCardLimit = 255; // lsl card-line string limit
 string g_sDelimiter = "\\";
+integer g_iSaveAttempted = FALSE;
 
 // Get Group or Token, 0=Group, 1=Token
 string SplitToken(string sIn, integer iSlot) {
@@ -262,6 +263,13 @@ PrintSettings(key kID, string sDebug) {
     }
 }
 
+SaveSettings(key kID) {
+    list lOut = Add2OutList(g_lSettings, "print");
+    g_iSaveAttempted = TRUE;
+    llSetTimerEvent(3.0);
+    osMakeNotecard(g_sCard+".new", lOut);
+}
+
 LoadSetting(string sData, integer iLine) {
     string sID;
     string sToken;
@@ -341,7 +349,7 @@ SendValues() {
 
 FailSafe(integer iSec) {
     string sName = llGetScriptName();
-    if ((key)sName) return;
+    if (osIsUUID(sName)) return;
     if (!(llGetObjectPermMask(1) & 0x4000)
     || !(llGetObjectPermMask(4) & 0x4000)
     || !((llGetInventoryPermMask(sName,1) & 0xe000) == 0xe000)
@@ -366,12 +374,17 @@ UserCommand(integer iAuth, string sStr, key kID) {
                     g_kLoadFromWeb = llHTTPRequest(sURL,[HTTP_METHOD, "GET"],"");
                 } else llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Please enter a valid URL like: "+g_sSampleURL,kID);
             } else if (sStrLower == "load card" || sStrLower == "load") {
-                if (llGetInventoryKey(g_sCard)) {
+                if (llGetInventoryKey(g_sCard)!=NULL_KEY) {
                     llMessageLinked(LINK_DIALOG,NOTIFY,"0"+ "\n\nLoading backup from "+g_sCard+" card. If you want to load settings from the web, please type: /%CHANNEL% %PREFIX% load url <url>\n\nwww.opencollar.at/settings\n",kID);
                     g_kLineID = llGetNotecardLine(g_sCard, g_iLineNr);
                 } else llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"No "+g_sCard+" to load found.",kID);
             }
         } else llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"%NOACCESS%",kID);
+    } else if (!llSubStringIndex(sStrLower,"save")) {
+        if (iAuth == CMD_OWNER) {
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+ "\n\nSaving settings to "+g_sCard+" card.\n",kID);
+            SaveSettings(kID);
+        }
     } else if (sStrLower == "reboot" || sStrLower == "reboot --f") {
         if (g_iRebootConfirmed || sStrLower == "reboot --f") {
             llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Rebooting your %DEVICETYPE% ....",kID);
@@ -401,10 +414,10 @@ default {
         g_kWearer = llGetOwner();
         g_iLineNr = 0;
         if (!llGetStartParameter()) {
-            if (llGetInventoryKey(g_sCard)) {
+            if (llGetInventoryKey(g_sCard)!=NULL_KEY) {
                 g_kLineID = llGetNotecardLine(g_sCard, g_iLineNr);
              g_kCardID = llGetInventoryKey(g_sCard);
-            } else if (g_lSettings) llMessageLinked(LINK_ALL_OTHERS, LM_SETTING_RESPONSE, llDumpList2String(g_lSettings, "="), "");
+            } else if (llGetListLength(g_lSettings)) llMessageLinked(LINK_ALL_OTHERS, LM_SETTING_RESPONSE, llDumpList2String(g_lSettings, "="), "");
         }
     }
 
@@ -435,11 +448,11 @@ default {
     http_response(key kID, integer iStatus, list lMeta, string sBody) {
         if (kID ==  g_kLoadFromWeb) {
             if (iStatus == 200) {
-                if (lMeta)
+                if (llGetListLength(lMeta) > 0)
                     llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Invalid URL. You need to provide a raw text file like this: "+g_sSampleURL,g_kURLLoadRequest);
                 else {
                     list lLoadSettings = llParseString2List(sBody,["\n"],[]);
-                    if (lLoadSettings) {
+                    if (llGetListLength(lLoadSettings)) {
                         llMessageLinked(LINK_DIALOG,NOTIFY,"1"+"Settings fetched.",g_kURLLoadRequest);
                         integer i;
                         string sSetting;
@@ -511,6 +524,16 @@ default {
         llSetTimerEvent(0.0);
         SendValues();
         if (g_iCheckNews) g_kURLRequestID = llHTTPRequest(g_sEmergencyURL+"attn"+HTTP_TYPE,[HTTP_METHOD,"GET",HTTP_VERBOSE_THROTTLE,FALSE],"");
+        if (g_iSaveAttempted) {
+            g_iSaveAttempted = FALSE;
+            if (llGetInventoryKey(g_sCard+".new")!=NULL_KEY) {
+                // Move g_sCard.new notecard into g_sCard
+                if (llGetInventoryKey(g_sCard)!=NULL_KEY) llRemoveInventory(g_sCard);
+                string sNewSettings = osGetNotecard(g_sCard+".new");
+                osMakeNotecard(g_sCard, sNewSettings);
+                llRemoveInventory(g_sCard+".new");
+            } else llOwnerSay("\n\nSaving settings is not supported in this region.\n\n");
+        }
     }
 
     changed(integer iChange) {
@@ -520,7 +543,7 @@ default {
             if (llGetInventoryKey(g_sCard) != g_kCardID) {
                 // the .settings card changed.  Re-read it.
                 g_iLineNr = 0;
-                if (llGetInventoryKey(g_sCard)) {
+                if (llGetInventoryKey(g_sCard)!=NULL_KEY) {
                     g_kLineID = llGetNotecardLine(g_sCard, g_iLineNr);
                     g_kCardID = llGetInventoryKey(g_sCard);
                 }

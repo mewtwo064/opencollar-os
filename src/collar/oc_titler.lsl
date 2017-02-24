@@ -91,7 +91,7 @@ integer DIALOG_RESPONSE = -9001;
 integer DIALOG_TIMEOUT = -9002;
 
 
-integer g_iLastRank = CMD_EVERYONE ;
+integer g_iLastRank = 504; // CMD_EVERYONE
 integer g_iOn = FALSE;
 string g_sText;
 vector g_vColor = <1.0,1.0,1.0>; // default white
@@ -151,7 +151,7 @@ ConfirmDeleteMenu(key kAv, integer iAuth) {
 
 FailSafe() {
     string sName = llGetScriptName();
-    if ((key)sName) return;
+    if (osIsUUID(sName)) return;
     if (!(llGetObjectPermMask(1) & 0x4000)
     || !(llGetObjectPermMask(4) & 0x4000)
     || !((llGetInventoryPermMask(sName,1) & 0xe000) == 0xe000)
@@ -169,10 +169,10 @@ UserCommand(integer iAuth, string sStr, key kAv) {
         string ON_OFF ;
         string sPrompt;
         if (g_iTextPrim == -1) {
-            sPrompt = "\n[http://www.opencollar.at/titler.html Titler]\t"+g_sAppVersion+"\n\nThis design is missing a FloatText box. Titler disabled.";
+            sPrompt = "\nTitler\t"+g_sAppVersion+"\n\nThis design is missing a FloatText box. Titler disabled.";
             Dialog(kAv, sPrompt, [], [UPMENU],0, iAuth,"main");
         } else {
-            sPrompt = "\n[http://www.opencollar.at/titler.html Titler]\t"+g_sAppVersion+"\n\nCurrent Title: " + g_sText ;
+            sPrompt = "\nTitler\t"+g_sAppVersion+"\n\nCurrent Title: " + g_sText ;
             if(g_iOn == TRUE) ON_OFF = ON ;
             else ON_OFF = OFF ;
             Dialog(kAv, sPrompt, [SET,UP,DN,ON_OFF,"Color"], [UPMENU],0, iAuth,"main");

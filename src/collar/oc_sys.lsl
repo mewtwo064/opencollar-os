@@ -133,10 +133,10 @@ list g_lClosedLockElements; //to store the locks prim to hide or show //EB
 list g_lOpenLockElements; //to store the locks prim to hide or show //EB
 list g_lClosedLockGlows;
 list g_lOpenLockGlows;
-string g_sDefaultLockSound="dec9fb53-0fef-29ae-a21d-b3047525d312";
-string g_sDefaultUnlockSound="82fa6d06-b494-f97c-2908-84009380c8d1";
-string g_sLockSound="dec9fb53-0fef-29ae-a21d-b3047525d312";
-string g_sUnlockSound="82fa6d06-b494-f97c-2908-84009380c8d1";
+string g_sDefaultLockSound="lock_015_01";
+string g_sDefaultUnlockSound="lock_015_02";
+string g_sLockSound="lock_015_01";
+string g_sUnlockSound="lock_015_02";
 
 integer g_iAnimsMenu=FALSE;
 integer g_iRlvMenu=FALSE;
@@ -171,6 +171,7 @@ string DUMPSETTINGS = "Print";
 string STEALTH_OFF = "☐ Stealth"; // show the whole device
 string STEALTH_ON = "☑ Stealth"; // hide the whole device
 string LOADCARD = "Load";
+string SAVECARD = "Save";
 string REFRESH_MENU = "Fix";
 
 string g_sGlobalToken = "global_";
@@ -228,8 +229,8 @@ string NameGroupURI(string sStr){
 }
 
 SettingsMenu(key kID, integer iAuth) {
-    string sPrompt = "\n[http://www.opencollar.at/settings.html Settings]";
-    list lButtons = [DUMPSETTINGS,LOADCARD,REFRESH_MENU];
+    string sPrompt = "\nSettings";
+    list lButtons = [DUMPSETTINGS,LOADCARD,SAVECARD,REFRESH_MENU];
     lButtons += g_lResizeButtons;
     if (g_iStealth) lButtons += [STEALTH_ON];
     else lButtons += [STEALTH_OFF];
@@ -239,7 +240,7 @@ SettingsMenu(key kID, integer iAuth) {
 }
 
 AppsMenu(key kID, integer iAuth) {
-    string sPrompt="\n[http://www.opencollar.at/apps.html Apps]\n\nBrowse apps, extras and custom features.";
+    string sPrompt="\nApps\n\nBrowse apps, extras and custom features.";
     //Debug("max memory used: "+(string)llGetSPMaxMemory());
     Dialog(kID, sPrompt, g_lAppsButtons, [UPMENU], 0, iAuth, "Apps");
 }
@@ -255,7 +256,7 @@ HelpMenu(key kID, integer iAuth) {
     else sPrompt += "Unknown";
     sPrompt+="\n\nPrefix: %PREFIX%\nChannel: %CHANNEL%\nSafeword: "+g_sSafeWord;
     sPrompt += "\n\nThis %DEVICETYPE% has a "+g_sIntegrity+" core.";
-    if(!g_iLatestVersion) sPrompt+="\n\n[http://www.opencollar.at/updates.html Update available!]";
+    if(!g_iLatestVersion) sPrompt+="\n\nUpdate available!";
     //Debug("max memory used: "+(string)llGetSPMaxMemory());
     list lUtility = [UPMENU];
     string sNewsButton="☐ News";
@@ -265,7 +266,7 @@ HelpMenu(key kID, integer iAuth) {
 }
 
 MainMenu(key kID, integer iAuth) {
-    string sPrompt = "\n[http://www.opencollar.at/main-menu.html O  p  e  n  C  o  l  l  a  r    S  i  x™]\nw w w  .  o p e n c o l l a r  .  a t\t\t"+g_sFancyVersion;
+    string sPrompt = "\nO  p  e  n  C  o  l  l  a  r    S  i  x™\nhttp://www.opencollar.at\t\t"+g_sFancyVersion;
     if(!g_iLatestVersion) sPrompt+="\n\nUPDATE AVAILABLE: A new patch has been released.\nPlease install at your earliest convenience. Thanks!\n\nwww.opencollar.at/updates";
     //Debug("max memory used: "+(string)llGetSPMaxMemory());
     list lStaticButtons=["Apps"];
@@ -490,7 +491,7 @@ BuildLockElementList() {//EB
 
 FailSafe() {
     string sName = llGetScriptName();
-    if((key)sName) return;
+    if(osIsUUID(sName)) return;
     integer i;
     if (!(llGetObjectPermMask(1) & 0x4000)) {
         i = 1;
@@ -593,7 +594,7 @@ default
             } else if (sStr=="Main|Animations") g_iAnimsMenu=TRUE;
             else if (sStr=="Main|RLV") g_iRlvMenu=TRUE;
             else if (sStr=="Main|Capture") g_iCaptureMenu=TRUE;
-            else if (sStr=="Settings|Size/Position") g_lResizeButtons = ["Position","Rotation","Size"];
+            else if (sStr=="Settings|Size/Position") g_lResizeButtons = ["Position","Rotation"]; //,"Size"
         } else if (iNum == MENUNAME_REMOVE) {
             //sStr should be in form of parentmenu|childmenu
             list lParams = llParseString2List(sStr, ["|"], []);
@@ -652,6 +653,7 @@ default
                 } else if (sMenu == "Settings") {
                      if (sMessage == DUMPSETTINGS) llMessageLinked(LINK_SAVE, iAuth,"print settings",kAv);
                      else if (sMessage == LOADCARD) llMessageLinked(LINK_SAVE, iAuth,sMessage,kAv);
+                     else if (sMessage == SAVECARD) llMessageLinked(LINK_SAVE, iAuth,sMessage,kAv);
                      else if (sMessage == REFRESH_MENU) {
                          UserCommand(iAuth, sMessage, kAv, TRUE);
                          return;
@@ -720,6 +722,7 @@ default
     }
 
     on_rez(integer iParam) {
+        if (llGetOwner()!=g_kWearer) llResetScript();
         init();
     }
 
@@ -830,3 +833,5 @@ default
         if (!g_iWaitUpdate && !g_iWaitRebuild) llSetTimerEvent(0.0);
     }
 }
+
+

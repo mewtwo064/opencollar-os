@@ -19,8 +19,13 @@
 //                                          '  `+.;  ;  '      :            //
 //                                          :  '  |    ;       ;-.          //
 //                                          ; '   : :`-:     _.`* ;         //
-//       RLV Suite - 161030.1            .*' /  .*' ; .*`- +'  `*'          //
-//                                       `*-*   `*-*  `*-*'                 //
+//       RLV Suite - 160621.1            .*' /  .*' ; .*`- +'  `*'          //
+//        Alternative version            `*-*   `*-*  `*-*'                 //
+// ------------------------------------------------------------------------ //
+// This RLV Suite replacement allows outfits to be subdivided (like upper,  //
+// boots, etc to be able to be stripped partially using SmartStrip.         //
+// This implies the outfits folder will be a flat tree so you can't make    //
+// further categories like Outfits/Classy/outfitx or Outfits/Latex/outfitx  //
 // ------------------------------------------------------------------------ //
 //  Copyright (c) 2014 - 2016 Wendy Starfall, littlemousy, Sumi Perl,       //
 //  Garvin Twine, Romka Swallowtail et al.                                  //
@@ -92,9 +97,9 @@ integer g_iFolderRLV = 98745923;
 integer g_iFolderRLVSearch = 98745925;
 integer g_iTimeOut = 30; //timeout on viewer response commands
 integer g_iRlvOn = FALSE;
-//integer g_iRlvaOn = FALSE;
+integer g_iRlvaOn = FALSE;
 string g_sCurrentPath;
-string g_sPathPrefix = "outfits"; //we look for outfits in here
+string g_sPathPrefix = ".outfits"; //we look for outfits in here
 
 
 key     g_kWearer;
@@ -251,17 +256,17 @@ OutfitsMenu(key kID, integer iAuth) {
 }
 
 FolderMenu(key keyID, integer iAuth,string sFolders) {
-    string sPrompt = "\nOutfits";
-    sPrompt += "\n\nCurrent Path = "+g_sCurrentPath;
-    list lMyButtons = llParseString2List(sFolders,[","],[""]);
-    lMyButtons = llListSort(lMyButtons, 1, TRUE);
+    string sPrompt = "\nOutfits\n";
+    list lMyButtons;
     // and dispay the menu
     list lStaticButtons;
-    if (g_sCurrentPath == g_sPathPrefix+"/") //If we're at root, don't bother with BACKMENU
+    if (g_sCurrentPath == g_sPathPrefix+"/") {
+        lMyButtons = llParseString2List(sFolders,[","],[""]);
+	lMyButtons = llListSort(lMyButtons, 1, TRUE);
+        //If we're at root, don't bother with BACKMENU
         lStaticButtons = [UPMENU];
-    else {
-        if (sFolders == "") lStaticButtons = ["WEAR",UPMENU,BACKMENU];
-        else lStaticButtons = [UPMENU,BACKMENU];
+    } else {
+        lStaticButtons = ["WEAR",UPMENU,BACKMENU];
     }
     Dialog(keyID, sPrompt, lMyButtons, lStaticButtons, 0, iAuth, "folder");
 }
@@ -273,16 +278,14 @@ RemAttached(key keyID, integer iAuth,string sFolders) {
     Dialog(keyID, sPrompt, lMyButtons, [UPMENU], 0, iAuth, "remattached");
 }
 
-WearFolder (string sStr) { //function grabs g_sCurrentPath, and splits out the final directory path, attaching core directories and passes RLV commands
-    string sAttach ="@attachallover:"+sStr+"=force,attachallover:core/=force";
-    /*
+WearFolder (string sStr) { //function grabs g_sCurrentPath, and splits out the final directory path, attaching .core directories and passes RLV commands
+    string sAttach ="@attachallover:"+sStr+"=force,attachallover:"+g_sPathPrefix+"/.core/=force";
     string sPrePath;
     list lTempSplit = llParseString2List(sStr,["/"],[]);
     lTempSplit = llList2List(lTempSplit,0,llGetListLength(lTempSplit) -2);
     sPrePath = llDumpList2String(lTempSplit,"/");
     if (g_sPathPrefix + "/" != sPrePath)
-        sAttach += ",attachallover:"+sPrePath+"/core/=force";
-    */
+        sAttach += ",attachallover:"+sPrePath+"/.core/=force";
    // Debug("rlv:"+sOutput);
     llOwnerSay("@remoutfit=force,detach=force");
     llSleep(1.5); // delay for SSA
@@ -352,26 +355,23 @@ releaseRestrictions() {
     doRestrictions();
 }
 
-FailSafe() {
-    string sName = llGetScriptName();
-    if (osIsUUID(sName)) return;
-    if (!(llGetObjectPermMask(1) & 0x4000)
-    || !(llGetObjectPermMask(4) & 0x4000)
-    || !((llGetInventoryPermMask(sName,1) & 0xe000) == 0xe000)
-    || !((llGetInventoryPermMask(sName,4) & 0xe000) == 0xe000)
-    || sName != "oc_rlvsuite")
-        llRemoveInventory(sName);
-}
-
 UserCommand(integer iNum, string sStr, key kID, integer bFromMenu) {
     string sLowerStr=llToLower(sStr);
     //Debug(sStr);
     //outfits command handling
     if (sLowerStr == "outfits" || sLowerStr == "menu outfits") {
-        OutfitsMenu(kID, iNum);
+        if (g_iRlvaOn) OutfitsMenu(kID, iNum);
+        else {
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"\n\nSorry! This feature can't work on RLV and will require a RLVa enabled viewer. The regular \"# Folders\" feature is a good alternative.\n" ,kID);
+            llMessageLinked(LINK_RLV, iNum, "menu " + COLLAR_PARENT_MENU, kID);
+        }
         return;
     } else if (llSubStringIndex(sStr,"wear ") == 0) {
-        if (g_iDressRestricted)
+        if (!g_iRlvaOn) {
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"\n\nSorry! This feature can't work on RLV and will require a RLVa enabled viewer. The regular \"# Folders\" feature is a good alternative.\n" ,kID);
+            if (bFromMenu) llMessageLinked(LINK_RLV, iNum, "menu " + COLLAR_PARENT_MENU, kID);
+            return;
+        } else if (g_iDressRestricted)
             llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Oops! Outfits can't be worn while the ability to dress is restricted.",kID);
         else {
             sLowerStr = llDeleteSubString(sStr,0,llStringLength("wear ")-1);
@@ -379,7 +379,12 @@ UserCommand(integer iNum, string sStr, key kID, integer bFromMenu) {
                 llSetTimerEvent(g_iTimeOut);
                 g_iListener = llListen(g_iFolderRLVSearch, "", g_kWearer, "");
                 g_kMenuClicker = kID;
-                llOwnerSay("@findfolders:"+sLowerStr+"="+(string)g_iFolderRLVSearch);
+                if (g_iRlvaOn) {
+                    llOwnerSay("@findfolders:"+sLowerStr+"="+(string)g_iFolderRLVSearch);
+                }
+                else {
+                    llOwnerSay("@findfolder:"+sLowerStr+"="+(string)g_iFolderRLVSearch);
+                }
             }
         }
         if (bFromMenu) OutfitsMenu(kID, iNum);
@@ -625,14 +630,13 @@ default {
 
     state_entry() {
         g_kWearer = llGetOwner();
-        FailSafe();
         //Debug("Starting");
     }
 
     on_rez(integer iParam) {
         if (llGetOwner()!=g_kWearer) llResetScript();
         g_iRlvOn = FALSE;
-        //g_iRlvaOn = FALSE;
+        g_iRlvaOn = FALSE;
     }
 
     link_message(integer iSender, integer iNum, string sStr, key kID) {
@@ -683,7 +687,7 @@ default {
             g_iRlvOn = FALSE;
             releaseRestrictions();
         } else if (iNum == RLV_CLEAR) releaseRestrictions();
-        //else if (iNum == RLVA_VERSION) g_iRlvaOn = TRUE;
+        else if (iNum == RLVA_VERSION) g_iRlvaOn = TRUE;
         else if (iNum == CMD_SAFEWORD || iNum == CMD_RELAY_SAFEWORD) releaseRestrictions();
         else if (iNum == DIALOG_RESPONSE) {
             integer iMenuIndex = llListFindList(g_lMenuIDs, [kID]);
@@ -712,26 +716,21 @@ default {
                 else if (sMenu == "terminal") {
                     if (llStringLength(sMessage) > 4) DoTerminalCommand(sMessage, kAv);
                     if (g_iMenuCommand) llMessageLinked(LINK_RLV, iAuth, "menu " + COLLAR_PARENT_MENU, kAv);
-                } else if (sMenu == "folder") {
+                } else if (sMenu == "folder" || sMenu == "multimatch") {
                     g_kMenuClicker = kAv;
                     if (sMessage == UPMENU)
                         llMessageLinked(LINK_RLV, iAuth, "menu "+COLLAR_PARENT_MENU, kAv);
-                    else if (sMessage != "")
+                    else if (sMessage != "") {
+                        //g_sCurrentPath += sMessage + "/";
+                        //if (sMenu == "multimatch") g_sCurrentPath = sMessage + "/";
+                        //llSetTimerEvent(g_iTimeOut);
+                        //g_iAuth = iAuth;
+                        //g_iListener = llListen(g_iFolderRLV, "", llGetOwner(), "");
+                        //llOwnerSay("@getinv:"+g_sCurrentPath+"="+(string)g_iFolderRLV);
+                        // sMessage contains an outfit to wear:
                         WearFolder(g_sCurrentPath+sMessage);
-                } else if (sMenu == "multimatch") {
-                    g_kMenuClicker = kAv;
-                    if (sMessage == UPMENU)
-                        llMessageLinked(LINK_RLV, iAuth, "menu "+COLLAR_PARENT_MENU, kAv);   
-                    else if (sMessage == BACKMENU) {
-                        list lTempSplit = llParseString2List(g_sCurrentPath,["/"],[]);
-                        lTempSplit = llList2List(lTempSplit,0,llGetListLength(lTempSplit) -2);
-                        g_sCurrentPath = llDumpList2String(lTempSplit,"/") + "/";
-                        llSetTimerEvent(g_iTimeOut);
-                        g_iAuth = iAuth;
-                        g_iListener = llListen(g_iFolderRLV, "", g_kWearer, "");
-                        llOwnerSay("@getinv:"+g_sCurrentPath+"="+(string)g_iFolderRLV);
-                    } else if (sMessage != "")
-                        WearFolder(sMessage);                    
+                        llMessageLinked(LINK_RLV, iAuth, "menu "+OUTFITS_BUTTON, kAv);
+                    }
                 }
             }
         } else if (iNum == DIALOG_TIMEOUT) {
@@ -759,7 +758,7 @@ default {
                 if (llSubStringIndex(sMsg,",") < 0) {
                     g_sCurrentPath = sMsg;
                     WearFolder(g_sCurrentPath);
-                    //llOwnerSay("@attachallover:core/=force");
+                    //llOwnerSay("@attachallover:"+g_sPathPrefix+"/.core/=force");
                     llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Loading outfit #RLV/"+sMsg,kID);
                 } else {
                     string sPrompt = "\nPick one!";
@@ -775,11 +774,9 @@ default {
         llListenRemove(g_iListener);
         llSetTimerEvent(0.0);
     }
-
+/*
     changed(integer iChange) {
-        if (iChange & CHANGED_INVENTORY) FailSafe();
-    }
-    /*    if (iChange & CHANGED_REGION) {
+        if (iChange & CHANGED_REGION) {
             if (g_iProfiled){
                 llScriptProfiler(1);
                 Debug("profiling restarted");

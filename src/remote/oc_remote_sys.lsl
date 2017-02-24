@@ -106,7 +106,8 @@ string g_sRemovePartner = "Remove";
 string g_sAllPartners = "ALL";
 string g_sAddPartners = "Add";
 
-list g_lMainMenuButtons = [" ◄ ",g_sAllPartners," ► ",g_sAddPartners, g_sListPartners, g_sRemovePartner, "Collar Menu", "Rez"];
+//list g_lMainMenuButtons = [" ◄ ",g_sAllPartners," ► ",g_sAddPartners, g_sListPartners, g_sRemovePartner, "Collar Menu", "Rez"];
+list g_lMainMenuButtons = [" ◄ ", "ALL", " ► ", "Add", "List", "Remove", "Collar Menu", "Rez"];
 list g_lMenus = ["HUD Style"];
 key    g_kMenuID;
 string g_sMenuType;
@@ -130,7 +131,7 @@ Debug(string sStr) {
 }*/
 
 string NameURI(string sID) {
-    if ((key)sID)
+    if (osIsUUID(sID))
         return "secondlife:///app/agent/"+sID+"/about";
     else return sID; //this way we can use the function also for "ALL" and dont need a special case for that everytime
 }
@@ -160,13 +161,13 @@ SendCollarCommand(string sCmd) {
     g_lPartnersInSim = PartnersInSim();
     integer i = llGetListLength(g_lPartnersInSim);
     if (i > 1) {
-        if ((key)g_sActivePartnerID) {
+        if (osIsUUID(g_sActivePartnerID)) {
             if (!llSubStringIndex(sCmd,"acc-"))
                 llMessageLinked(LINK_THIS,ACC_CMD,sCmd,g_sActivePartnerID);
             else
                 llRegionSayTo(g_sActivePartnerID,PersonalChannel(g_sActivePartnerID,0), g_sActivePartnerID+":"+sCmd);
         } else if (g_sActivePartnerID == g_sAllPartners) {
-            integer i = llGetListLength(g_lPartnersInSim);
+             i = llGetListLength(g_lPartnersInSim);
              while (i > 1) { // g_lPartnersInSim has always one entry ["ALL"] do whom we dont want to send anything
                 string sPartnerID = llList2String(g_lPartnersInSim,--i);
                 if (!llSubStringIndex(sCmd,"acc-"))
@@ -246,7 +247,7 @@ NextPartner(integer iDirection, integer iTouch) {
         else if (index < 0) index = llGetListLength(g_lPartnersInSim)-1;
         g_sActivePartnerID = llList2String(g_lPartnersInSim,index);
     } else g_sActivePartnerID = g_sAllPartners;
-    if ((key)g_sActivePartnerID)
+    if (osIsUUID(g_sActivePartnerID))
         g_kPicRequest = llHTTPRequest("http://world.secondlife.com/resident/"+g_sActivePartnerID,[HTTP_METHOD,"GET"],"");
     else if (g_sActivePartnerID == g_sAllPartners)
         if (g_iPicturePrim) llSetLinkPrimitiveParamsFast(g_iPicturePrim,[PRIM_TEXTURE, ALL_SIDES, g_sTextureALL,<1.0, 1.0, 0.0>, ZERO_VECTOR, 0.0]);
@@ -267,7 +268,7 @@ integer PicturePrim() {
 
 FailSafe() {
     string sName = llGetScriptName();
-    if ((key)sName) return;
+    if (osIsUUID(sName)) return;
     if (!(llGetObjectPermMask(1) & 0x4000)
     || !(llGetObjectPermMask(4) & 0x4000)
     || !((llGetInventoryPermMask(sName,1) & 0xe000) == 0xe000)
@@ -282,7 +283,7 @@ default {
         FailSafe();
         g_kWebLookup = llHTTPRequest("https://raw.githubusercontent.com/VirtualDisgrace/opencollar/master/web/~remote", [HTTP_METHOD, "GET"],"");
         llSleep(1.0);//giving time for others to reset before populating menu
-        if (llGetInventoryKey(g_sCard)) {
+        if (llGetInventoryKey(g_sCard)!=NULL_KEY) {
             g_kLineID = llGetNotecardLine(g_sCard, g_iLineNr);
             g_kCardID = llGetInventoryKey(g_sCard);
         }
@@ -338,7 +339,7 @@ default {
                 Dialog("\nINSTALLATION REQUEST PENDING:\n\nAn update or app installer is requesting permission to continue. Installation progress can be observed above the installer box and it will also tell you when it's done.\n\nShall we continue and start with the installation?", ["Yes","No"], ["Cancel"], 0, "UpdateConfirmMenu");
             }
         } else if (llGetSubString(sMessage, 36, 40)==":pong") {
-            if (!~llListFindList(g_lNewPartnerIDs, [llGetOwnerKey(kID)]) && !~llListFindList(g_lPartners, [(string)llGetOwnerKey(kID)]))
+            if (!(~llListFindList(g_lNewPartnerIDs, [llGetOwnerKey(kID)])) && !(~llListFindList(g_lPartners, [(string)llGetOwnerKey(kID)])))
                 g_lNewPartnerIDs += [llGetOwnerKey(kID)];
         }
     }
@@ -349,7 +350,8 @@ default {
             if (llList2String(lParams,0) == g_sMainMenu) {
                 string sChild = llList2String(lParams,1);
                 if (! ~llListFindList(g_lMenus, [sChild]))
-                    g_lMenus = llListSort(g_lMenus+=[sChild], 1, TRUE);
+                    g_lMenus+=[sChild];
+                    g_lMenus = llListSort(g_lMenus, 1, TRUE);
             }
             lParams = [];
         } else if (iNum == SUBMENU && sStr == "Main") MainMenu();
@@ -445,7 +447,7 @@ default {
                         kNewPartnerID = llList2Key(g_lNewPartnerIDs,--i);
                         if (kNewPartnerID) AddPartner(kNewPartnerID);
                     } while (i);
-                } else if ((key)sMessage)
+                } else if (osIsUUID(sMessage))
                     AddPartner(sMessage);
                 g_lNewPartnerIDs = [];
                 MainMenu();
@@ -468,7 +470,7 @@ default {
             if (sData == EOF) { //  notify the owner
                 //llOwnerSay(g_sCard+" card loaded.");
                 return;
-            } else if ((key)sData) // valid lines contain only a valid UUID which is a key
+            } else if (osIsUUID(sData)) // valid lines contain only a valid UUID which is a key
                 AddPartner(sData);
             g_kLineID = llGetNotecardLine(g_sCard, ++g_iLineNr);
         }

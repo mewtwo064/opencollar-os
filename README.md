@@ -40,3 +40,16 @@ OpenCollar Six source code and creative resource are covered and protected by st
 * Everything else that is shared within the metaverse and where no explicit license was applied is covered by the [License Terms for the OpenCollar Six Role Play Device](https://raw.githubusercontent.com/VirtualDisgrace/opencollar/master/LICENSE).
 
 **NOTE:** Please make sure that you have read and understood the full legal text of each license if your interest in OpenCollar Six goes beyond personal use (i.e. commercial redistribution). For human-readable summaries of various licenses, check out [tl;drLegal](https://tldrlegal.com/)
+
+#### OpenSim Porting Information
+
+We target and test for OpenSim 0.8 (stable) and OpenSim 0.9 (unstable, master)
+
+This is the oscollar6 branch, which is a port of OpenCollar Six  
+Check out the oscollar3 branch for a port based on OpenCollar 3.99x
+
+There are some differences between the v3 and Six collars, for instance Six is much more optimized thanks to certain scripts being in seperate links (which can be optionally invisible, but you do need them seperate).
+
+If you are looking to directly convert or upgrade existing v3 collars for OpenSim, you can use the oscollar3 branch which should be 100% compatible with the last v3 version in Second Life. We haven't made a transmuter tool yet to convert a v3 collar to Six.
+
+A ready made standard OpenCollar for both branches can be be aquired at the OsGrid Sim ['Kinky Hub'](http://opensimworld.com/hop/77066-Kinky-Hub). Creators can use this standard collar as a technical reference for making new products.

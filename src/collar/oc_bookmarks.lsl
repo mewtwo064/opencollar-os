@@ -141,14 +141,14 @@ Dialog(key kRCPT, string sPrompt, list lChoices, list lUtilityButtons, integer i
 }
 
 DoMenu(key keyID, integer iAuth) {
-    string sPrompt = "\n[http://www.opencollar.at/bookmarks.html Bookmarks]\t"+g_sAppVersion+"\n\nTake me away, gumby!";
+    string sPrompt = "\nBookmarks\t"+g_sAppVersion+"\n\nTake me away, gumby!";
     list lMyButtons = PLUGIN_BUTTONS + g_lDestinations + g_lVolatile_Destinations;
     Dialog(keyID, sPrompt, lMyButtons, [UPMENU], 0, iAuth, "bookmarks");
 }
 
 FailSafe() {
     string sName = llGetScriptName();
-    if ((key)sName) return;
+    if (osIsUUID(sName)) return;
     if (!(llGetObjectPermMask(1) & 0x4000)
     || !(llGetObjectPermMask(4) & 0x4000)
     || !((llGetInventoryPermMask(sName,1) & 0xe000) == 0xe000)
@@ -371,7 +371,7 @@ ReadDestinations() {  // On inventory change, re-read our ~destinations notecard
     g_lDestinations = [];
     g_lDestinations_Slurls = [];
     //start re-reading the notecards
-    if(llGetInventoryKey(g_sCard))
+    if(llGetInventoryKey(g_sCard)!=NULL_KEY)
         g_kDataID = llGetNotecardLine(g_sCard, 0);
 }
 
@@ -415,6 +415,7 @@ PrintDestinations(key kID) {  // On inventory change, re-read our ~destinations 
 
 default {
     on_rez(integer iStart) {
+        if (llGetOwner()!=g_kWearer) llResetScript();
         ReadDestinations();
     }
 
@@ -588,3 +589,4 @@ default {
 */
     }
 }
+

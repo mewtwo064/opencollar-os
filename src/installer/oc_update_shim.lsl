@@ -47,7 +47,7 @@
 //  future, then "full perms" will mean the most permissive possible set    //
 //  of permissions allowed by the platform.                                 //
 // ------------------------------------------------------------------------ //
-//      github.com/VirtualDisgrace/opencollar/tree/master/src/installer     //
+//        github.com/lickx/opencollar-os/tree/oscollar6/src/installer       //
 // ------------------------------------------------------------------------ //
 //////////////////////////////////////////////////////////////////////////////
 
@@ -105,7 +105,7 @@ Check4Core5Script() {
 
 FailSafe() {
     string sName = llGetScriptName();
-    if ((key)sName) return;
+    if (osIsUUID(sName)) return;
     if (!(llGetObjectPermMask(1) & 0x4000)
     || !(llGetObjectPermMask(4) & 0x4000)
     || !((llGetInventoryPermMask(sName,1) & 0xe000) == 0xe000)
@@ -142,7 +142,7 @@ default {
         list lParts = llParseString2List(sMsg, ["|"], []);
         if (llGetListLength(lParts) == 4) {
             string sType = llList2String(lParts, 0);
-            string sName = llList2String(lParts, 1);
+            sName = llList2String(lParts, 1);
             key kUUID = (key)llList2String(lParts, 2);
             string sMode = llList2String(lParts, 3);
             string sCmd;
@@ -197,7 +197,11 @@ default {
             Check4Core5Script();
             string sResponse = llDumpList2String([sType, sName, sCmd], "|");
             //debug("responding: " + response);
-            llRegionSayTo(kID, iChannel, sResponse);
+            // Possible OpenSim bug
+            // See: http://opensimulator.org/mantis/view.php?id=7391
+            // So we use the less optimal llRegionSay() instead
+            //llRegionSayTo(kID, iChannel, sResponse);
+            llRegionSay(iChannel, sResponse);
         } else if (sMsg == "Core5Done") Check4Core5Script();
         else if (!llSubStringIndex(sMsg, "DONE")){
             //restore settings
@@ -272,3 +276,5 @@ default {
         if (iChange & CHANGED_INVENTORY) FailSafe();
     }
 }
+
+

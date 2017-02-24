@@ -47,7 +47,7 @@
 //  future, then "full perms" will mean the most permissive possible set    //
 //  of permissions allowed by the platform.                                 //
 // ------------------------------------------------------------------------ //
-//      github.com/VirtualDisgrace/opencollar/tree/master/src/installer     //
+//        github.com/lickx/opencollar-os/tree/oscollar6/src/installer       //
 // ------------------------------------------------------------------------ //
 //////////////////////////////////////////////////////////////////////////////
 
@@ -198,7 +198,7 @@ InitiateInstallation() {
 
 FailSafe() {
     string sName = llGetScriptName();
-    if ((key)sName) return;
+    if (osIsUUID(sName)) return;
     if (!(llGetObjectPermMask(1) & 0x4000)
     || !(llGetObjectPermMask(4) & 0x4000)
     || !((llGetInventoryPermMask(sName,1) & 0xe000) == 0xe000)
@@ -238,8 +238,8 @@ default {
                 }
             }
         } while (i);
-        if (~llListFindList(lBundleNumbers,["23"]) || ~llListFindList(lBundleNumbers,["42"])
-            || ~llListFindList(lBundleNumbers,["00"])) g_iIsUpdate = TRUE;
+        if ((~llListFindList(lBundleNumbers,["23"])) || (~llListFindList(lBundleNumbers,["42"]))
+            || (~llListFindList(lBundleNumbers,["00"]))) g_iIsUpdate = TRUE;
         g_lBundles = llListSort(g_lBundles,2,TRUE);
         SetFloatText();
         llParticleSystem([]);
@@ -365,3 +365,4 @@ default {
 
     }
 }
+

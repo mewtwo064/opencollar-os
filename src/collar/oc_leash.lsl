@@ -169,7 +169,7 @@ Debug(string sStr) {
 */
 
 string NameURI(key kID){
-    if (llGetAgentSize(kID))
+    if (llGetAgentSize(kID)!=ZERO_VECTOR)
         return "secondlife:///app/agent/"+(string)kID+"/about";
     else
         return "secondlife:///app/objectim/"+(string)kID+"/?name="+llEscapeURL(llKey2Name(kID))+"&owner="+(string)llGetOwnerKey(kID);
@@ -232,7 +232,7 @@ integer CheckCommandAuth(key kCmdGiver, integer iAuth) {
 SetLength(integer iIn) {
     g_iLength = iIn;
     // llTarget needs to be changed to the new length if leashed
-    if (g_kLeashedTo) {
+    if (g_kLeashedTo != NULL_KEY) {
         llTargetRemove(g_iTargetHandle);
         g_iTargetHandle = llTarget(g_vPos, g_iLength);
     }
@@ -242,7 +242,7 @@ ApplyRestrictions() {
     //Debug("Applying Restrictions");
     if (g_iLeasherInRange) {
         if (g_iStrictModeOn) {
-            if (g_kLeashedTo) {
+            if (g_kLeashedTo != NULL_KEY) {
                 if (! g_bFollowMode) {
                 //Debug("Setting restrictions");
                 llMessageLinked(LINK_RLV, RLV_CMD, "fly=n,tplm=n,tplure=n,tploc=n,tplure:" + (string) g_kLeashedTo + "=add", "realleash");     //set all restrictions
@@ -274,7 +274,7 @@ integer LeashTo(key kTarget, key kCmdGiver, integer iAuth, list lPoints, integer
     }
     if (!CheckCommandAuth(kCmdGiver, iAuth)) return FALSE;
     //if (g_kLeashedTo==kTarget) return TRUE;
-    if (g_kLeashedTo) DoUnleash(TRUE);
+    if (g_kLeashedTo != NULL_KEY) DoUnleash(TRUE);
 
     integer bCmdGiverIsAvi=llGetAgentSize(kCmdGiver) != ZERO_VECTOR;
     integer bTargetIsAvi=llGetAgentSize(kTarget) != ZERO_VECTOR;
@@ -377,7 +377,7 @@ DoLeash(key kTarget, integer iAuth, list lPoints) {
 // Wrapper for DoUnleash()
 Unleash(key kCmdGiver) {
     string sTarget = NameURI(g_kLeashedTo);
-    if ( (key)g_kLeashedTo ) {
+    if (g_kLeashedTo != NULL_KEY) {
         string sCmdGiver = NameURI(kCmdGiver);
         string sWearMess;
         string sCmdMess;
@@ -445,7 +445,7 @@ YankTo(key kIn){
 
 FailSafe() {
     string sName = llGetScriptName();
-    if ((key)sName) return;
+    if (osIsUUID(sName)) return;
     if (!(llGetObjectPermMask(1) & 0x4000)
     || !(llGetObjectPermMask(4) & 0x4000)
     || !((llGetInventoryPermMask(sName,1) & 0xe000) == 0xe000)
@@ -487,8 +487,8 @@ UserCommand(integer iAuth, string sMessage, key kMessageID, integer bFromMenu) {
             lButtons += ["Length"];
             lButtons += g_lButtons;
 
-            string sPrompt = "\n[http://www.opencollar.at/leash.html Leash]\n";
-            if (g_kLeashedTo) {
+            string sPrompt = "\nLeash\n";
+            if (g_kLeashedTo != NULL_KEY) {
                 if (g_bFollowMode) sPrompt += "\nFollowing: ";
                 else sPrompt += "\nLeashed to: ";
                 sPrompt += NameURI(g_kLeashedTo);
@@ -509,7 +509,7 @@ UserCommand(integer iAuth, string sMessage, key kMessageID, integer bFromMenu) {
             else if (sVal == "me") {
                 g_iPassConfirmed = TRUE;
                 LeashTo(kMessageID, kMessageID, iAuth, [], TRUE);
-            } else if ((key)sVal) {
+            } else if (osIsUUID(sVal)) {
                 g_iPassConfirmed = TRUE;
                 LeashTo((key)sVal, kMessageID, iAuth, [], TRUE);
             } else
@@ -583,7 +583,7 @@ UserCommand(integer iAuth, string sMessage, key kMessageID, integer bFromMenu) {
             if (!CheckCommandAuth(kMessageID, iAuth)) return;
             if (sVal==llToLower(BUTTON_UPMENU))
                 UserCommand(iAuth, "leashmenu", kMessageID ,bFromMenu);
-            else if((key)sVal) {
+            else if(osIsUUID(sVal)) {
                 list lPoints;
                 if (llGetListLength(lParam) > 2) lPoints = llList2List(lParam, 2, -1);
                 //debug("leash target is key");//could be a post, or could be we specified an av key
@@ -612,11 +612,11 @@ UserCommand(integer iAuth, string sMessage, key kMessageID, integer bFromMenu) {
                 if (bFromMenu) UserCommand(iAuth, "post", kMessageID ,bFromMenu);
             }
             if (sVal==llToLower(BUTTON_UPMENU))  UserCommand(iAuth, "menu leash", kMessageID ,bFromMenu);
-            else if((key)sVal) {
+            else if(osIsUUID(sVal)) {
                 list lPoints;
                 if (llGetListLength(lParam) > 2) lPoints = llList2List(lParam, 2, -1);
                 //debug("leash target is key");//could be a post, or could be we specified an av key
-                if (llGetAgentSize((key)sVal)) g_iPassConfirmed = FALSE;
+                if (llGetAgentSize((key)sVal)!=ZERO_VECTOR) g_iPassConfirmed = FALSE;
                 else g_iPassConfirmed = TRUE;
                 LeashTo((key)sVal, kMessageID, iAuth, lPoints, FALSE);
             } else
@@ -627,13 +627,14 @@ UserCommand(integer iAuth, string sMessage, key kMessageID, integer bFromMenu) {
 
 default {
     on_rez(integer start_param) {
+        if (llGetOwner()!=g_kWearer) llResetScript();
         DoUnleash(FALSE);
     }
 
     state_entry() {
         g_kWearer = llGetOwner();
         FailSafe();
-        llMinEventDelay(0.44);
+        //llMinEventDelay(0.44);
         DoUnleash(FALSE);
         //Debug("Starting");
     }
@@ -789,8 +790,10 @@ default {
     }
 
     at_target(integer iNum, vector vTarget, vector vMe) {
+        if (g_iTargetHandle==0) return;
         llStopMoveToTarget();
         llTargetRemove(g_iTargetHandle);
+        g_iTargetHandle = 0;
         g_vPos = llList2Vector(llGetObjectDetails(g_kLeashedTo,[OBJECT_POS]),0);
         g_iTargetHandle = llTarget(g_vPos, (float)g_iLength);
         if(g_iJustMoved) {
@@ -802,10 +805,11 @@ default {
     }
 
     not_at_target() {
+        if (g_iTargetHandle==0) return;
         g_iJustMoved = 1;
         // i ran into a problem here which seems to be "speed" related, specially when using the menu to unleash this event gets triggered together or just after the CleanUp() function
         //to prevent to get stay in the target events i added a check on g_kLeashedTo is NULL_KEY
-        if(g_kLeashedTo) {
+        if(g_kLeashedTo != NULL_KEY) {
             vector vNewPos = llList2Vector(llGetObjectDetails(g_kLeashedTo,[OBJECT_POS]),0);
             if (g_vPos != vNewPos) {
                 llTargetRemove(g_iTargetHandle);
@@ -844,3 +848,5 @@ default {
 */
     }
 }
+
+

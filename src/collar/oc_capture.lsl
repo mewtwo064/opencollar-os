@@ -125,7 +125,7 @@ Dialog(key kID, string sPrompt, list lChoices, list lUtilityButtons, integer iPa
 }
 
 CaptureMenu(key kId, integer iAuth) {
-    string sPrompt = "\n[http://www.opencollar.at/capture.html Capture]\n";
+    string sPrompt = "\nCapture\n";
     list lMyButtons;
     if (g_sTempOwnerID) lMyButtons += "Release";
     else {
@@ -174,7 +174,7 @@ doCapture(string sCaptorID, integer iIsConfirmed) {
 
 FailSafe() {
     string sName = llGetScriptName();
-    if ((key)sName) return;
+    if (osIsUUID(sName)) return;
     if (!(llGetObjectPermMask(1) & 0x4000)
     || !(llGetObjectPermMask(4) & 0x4000)
     || !((llGetInventoryPermMask(sName,1) & 0xe000) == 0xe000)
@@ -285,7 +285,7 @@ default{
         if (iNum == MENUNAME_REQUEST && sStr == "Main") llMessageLinked(iSender, MENUNAME_RESPONSE, "Main|Capture", "");
         else if (iNum == CMD_SAFEWORD || (sStr == "runaway" && iNum == CMD_OWNER)) {
             if (iNum == CMD_SAFEWORD && g_iCaptureOn) llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Capture Mode deactivated.", g_kWearer);
-            if (llGetAgentSize(g_sTempOwnerID)) llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Your capture role play with %WEARERNAME% is over.",g_sTempOwnerID);
+            if (llGetAgentSize(g_sTempOwnerID)!=ZERO_VECTOR) llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Your capture role play with %WEARERNAME% is over.",g_sTempOwnerID);
             g_iCaptureOn=FALSE;
             g_iRiskyOn = FALSE;
             llMessageLinked(LINK_SAVE, LM_SETTING_DELETE,g_sSettingToken+"capture", "");
