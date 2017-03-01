@@ -21,7 +21,7 @@
 //                    |     .'    ~~~~       \    / :                       //
 //                     \.. /               `. `--' .'                       //
 //                        |                  ~----~                         //
-//                           System - 161031.3                              //
+//                           System - 170301.1                              //
 // ------------------------------------------------------------------------ //
 //  Copyright (c) 2008 - 2016 Nandana Singh, Garvin Twine, Cleo Collins,    //
 //  Satomi Ahn, Joy Stipe, Wendy Starfall, littlemousy, Romka Swallowtail,  //
@@ -48,7 +48,7 @@
 //  future, then "full perms" will mean the most permissive possible set    //
 //  of permissions allowed by the platform.                                 //
 // ------------------------------------------------------------------------ //
-//       github.com/VirtualDisgrace/opencollar/tree/master/src/collar       //
+//       https://github.com/lickx/opencollar-os/tree/master/src/collar      //
 // ------------------------------------------------------------------------ //
 //////////////////////////////////////////////////////////////////////////////
 
@@ -230,12 +230,13 @@ string NameGroupURI(string sStr){
 
 SettingsMenu(key kID, integer iAuth) {
     string sPrompt = "\nSettings";
-    list lButtons = [DUMPSETTINGS,LOADCARD,SAVECARD,REFRESH_MENU];
+    list lButtons = [DUMPSETTINGS,LOADCARD,SAVECARD];
     lButtons += g_lResizeButtons;
     if (g_iStealth) lButtons += [STEALTH_ON];
     else lButtons += [STEALTH_OFF];
     if (g_iLooks) lButtons += "Looks";
     else lButtons += "Themes";
+    lButtons += [REFRESH_MENU];
     Dialog(kID, sPrompt, lButtons, [UPMENU], 0, iAuth, "Settings");
 }
 
@@ -594,7 +595,7 @@ default
             } else if (sStr=="Main|Animations") g_iAnimsMenu=TRUE;
             else if (sStr=="Main|RLV") g_iRlvMenu=TRUE;
             else if (sStr=="Main|Capture") g_iCaptureMenu=TRUE;
-            else if (sStr=="Settings|Size/Position") g_lResizeButtons = ["Position","Rotation"]; //,"Size"
+            else if (sStr=="Settings|Size/Position") g_lResizeButtons = ["Position","Rotation", "Size"];
         } else if (iNum == MENUNAME_REMOVE) {
             //sStr should be in form of parentmenu|childmenu
             list lParams = llParseString2List(sStr, ["|"], []);
