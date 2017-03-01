@@ -21,7 +21,7 @@
 //                    |     .'    ~~~~       \    / :                       //
 //                     \.. /               `. `--' .'                       //
 //                        |                  ~----~                         //
-//                          Animator - 161103.1                             //
+//                          Animator - 170301.1                             //
 // ------------------------------------------------------------------------ //
 //  Copyright (c) 2008 - 2016 Nandana Singh, Garvin Twine, Cleo Collins,    //
 //  Master Starship, Satomi Ahn, Joy Stipe, Wendy Starfall, Medea Destiny,  //
@@ -48,7 +48,7 @@
 //  future, then "full perms" will mean the most permissive possible set    //
 //  of permissions allowed by the platform.                                 //
 // ------------------------------------------------------------------------ //
-//       github.com/VirtualDisgrace/opencollar/tree/master/src/collar       //
+//          github.com/lickx/opencollar-os/tree/master/src/collar           //
 // ------------------------------------------------------------------------ //
 //////////////////////////////////////////////////////////////////////////////
 
@@ -282,8 +282,9 @@ MessageAOs(string sONOFF, string sWhat){ //send string as "ON"  / "OFF" saves 2 
 
 RefreshAnim() {  //g_lAnims can get lost on TP, so re-play g_lAnims[0] here, and call this function in "changed" event on TP
     if (llGetListLength(g_lAnims)) {
-        if (llGetPermissions() & PERMISSION_TRIGGER_ANIMATION) {
+        if (llGetPermissions() & PERMISSION_TRIGGER_ANIMATION && llGetPermissions() & PERMISSION_OVERRIDE_ANIMATIONS) {
             if (g_iPosture) llStartAnimation("~stiff");
+            if (g_iTweakPoseAO) llResetAnimationOverride("ALL");
             StartAnim(llList2String(g_lAnims, 0));
            // string sAnim = llList2String(g_lAnims, 0);
            // if (llGetInventoryType(sAnim) == INVENTORY_ANIMATION) StartAnim(sAnim);  //get and stop currently playing anim
@@ -292,7 +293,7 @@ RefreshAnim() {  //g_lAnims can get lost on TP, so re-play g_lAnims[0] here, and
 }
 
 StartAnim(string sAnim) {  //adds anim to queue, calls PlayAnim to play it, and calls AO as necessary
-    if (llGetPermissions() & PERMISSION_TRIGGER_ANIMATION) {
+    if (llGetPermissions() & PERMISSION_TRIGGER_ANIMATION && llGetPermissions() & PERMISSION_OVERRIDE_ANIMATIONS) {
         if (llGetInventoryType(sAnim) == INVENTORY_ANIMATION) {
             if (llGetListLength(g_lAnims)) UnPlayAnim(llList2String(g_lAnims, 0));
             g_lAnims = [sAnim] + g_lAnims;  //this way, g_lAnims[0] is always the currently playing anim
@@ -303,6 +304,13 @@ StartAnim(string sAnim) {  //adds anim to queue, calls PlayAnim to play it, and 
 }
 
 PlayAnim(string sAnim){  //plays anim and heightfix, depending on methods configured for each
+    if (g_iTweakPoseAO) {
+        if (g_sPoseMoveWalk!="") llSetAnimationOverride( "Walking", g_sPoseMoveWalk);
+        if (g_sPoseMoveRun!="") {
+            if (llGetInventoryKey(g_sPoseMoveRun)!=NULL_KEY) llSetAnimationOverride( "Running", g_sPoseMoveRun);
+            else if (llGetInventoryKey("~run")) llSetAnimationOverride( "Running", "~run");
+        }
+    }
     if (g_iRLVA_ON && g_iHoverOn) {
         integer index = llListFindList(g_lHeightAdjustments,[sAnim]);
         if (~index)
@@ -314,7 +322,7 @@ PlayAnim(string sAnim){  //plays anim and heightfix, depending on methods config
 }
 
 StopAnim(string sAnim) {  //deals with removing anim from queue, calls UnPlayAnim to stop it, calls AO as nexessary
-    if (llGetPermissions() & PERMISSION_TRIGGER_ANIMATION) {
+    if (llGetPermissions() & PERMISSION_TRIGGER_ANIMATION && llGetPermissions() & PERMISSION_OVERRIDE_ANIMATIONS) {
         if (llGetInventoryType(sAnim) == INVENTORY_ANIMATION) {
             integer n;
             while(~(n=llListFindList(g_lAnims,[sAnim])))
@@ -328,6 +336,7 @@ StopAnim(string sAnim) {  //deals with removing anim from queue, calls UnPlayAni
 }
 
 UnPlayAnim(string sAnim){  //stops anim and heightfix, depending on methods configured for each
+    if (g_iTweakPoseAO && llGetAnimationOverride("Standing") != "") llResetAnimationOverride("ALL");
     if (g_iRLVA_ON && g_iHoverOn) 
         llMessageLinked(LINK_RLV,RLV_CMD,"adjustheight:1;0;"+(string)g_fStandHover+"=force",g_kWearer);
     llStopAnimation(sAnim);
@@ -450,10 +459,12 @@ UserCommand(integer iNum, string sStr, key kID) {
         if ((iNum == CMD_OWNER)||(kID == g_kWearer)) {
             string sValueNotLower = llList2String(lParams, 1);
             if (sValue == "on") {
-                g_iTweakPoseAO = 1;
-                llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sSettingToken+"TweakPoseAO=1" , "");
-                RefreshAnim();
-                llMessageLinked(LINK_DIALOG, NOTIFY, "1"+"AntiSlide is now enabled.", kID);
+				if (llGetAnimationOverride("Standing") != "") {
+                	g_iTweakPoseAO = 1;
+                	llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sSettingToken+"TweakPoseAO=1" , "");
+                	RefreshAnim();
+                	llMessageLinked(LINK_DIALOG, NOTIFY, "1"+"AntiSlide is now enabled.", kID);
+                } else llMessageLinked(LINK_DIALOG, NOTIFY, "1"+"\n\nAntiSlide can't be used when a server-side AO is already running. If you are wearing the OpenCollar AO, it will take care of this functionality on its own and AntiSlide is not required. www.opencollar.at/ao\n", kID);
             } else if (sValue == "off") {
                 g_iTweakPoseAO = 0;
                 llMessageLinked(LINK_SAVE, LM_SETTING_DELETE, g_sSettingToken+"TweakPoseAO", "");
@@ -503,7 +514,7 @@ default {
        // llSetMemoryLimit(49152);  //2015-05-06 (5490 bytes free)
         g_kWearer = llGetOwner();
         FailSafe(0);
-        if (llGetAttached()) llRequestPermissions(g_kWearer, PERMISSION_TRIGGER_ANIMATION );
+        if (llGetAttached()) llRequestPermissions(g_kWearer, PERMISSION_TRIGGER_ANIMATION | PERMISSION_OVERRIDE_ANIMATIONS );
         CreateAnimList();
         //Debug("Starting");
     }
@@ -519,7 +530,7 @@ default {
             //MessageAOs("ON","STAND");
             g_lAnims = [];
         }
-        else llRequestPermissions(g_kWearer, PERMISSION_TRIGGER_ANIMATION );
+        else llRequestPermissions(g_kWearer, PERMISSION_TRIGGER_ANIMATION | PERMISSION_OVERRIDE_ANIMATIONS);
     }
 
     link_message(integer iSender, integer iNum, string sStr, key kID) {
@@ -566,7 +577,7 @@ default {
                 else if (sToken == "PostureRank") g_iLastPostureRank= (integer)sValue;
                 else if (sToken == "PoselockRank") g_iLastPoselockRank= (integer)sValue;
                 else if (sToken == "TweakPoseAO") {
-                     //if (llGetAnimationOverride("Standing") != "")
+                     if (llGetAnimationOverride("Standing") != "")
                         g_iTweakPoseAO = (integer)sValue;
                 }
             } else if (llGetSubString(sToken,0,i) == "offset_") {
