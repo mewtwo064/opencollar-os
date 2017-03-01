@@ -158,7 +158,7 @@ key g_kNCkey;
 key news_request;
 string g_sLastNewsTime = "0";
 
-string g_sWeb = "http://virtualdisgrace.com/oc/";
+string g_sWeb = "https://raw.githubusercontent.com/lickx/opencollar-os/master/web/";
 string g_sWorldAPI = "http://world.secondlife.com/";
 
 integer g_iUpdateAuth;
