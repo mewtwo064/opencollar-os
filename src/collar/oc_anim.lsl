@@ -308,7 +308,7 @@ PlayAnim(string sAnim){  //plays anim and heightfix, depending on methods config
         if (g_sPoseMoveWalk!="") llSetAnimationOverride( "Walking", g_sPoseMoveWalk);
         if (g_sPoseMoveRun!="") {
             if (llGetInventoryKey(g_sPoseMoveRun)!=NULL_KEY) llSetAnimationOverride( "Running", g_sPoseMoveRun);
-            else if (llGetInventoryKey("~run")) llSetAnimationOverride( "Running", "~run");
+            else if (llGetInventoryKey("~run")!=NULL_KEY) llSetAnimationOverride( "Running", "~run");
         }
     }
     if (g_iRLVA_ON && g_iHoverOn) {
@@ -459,11 +459,11 @@ UserCommand(integer iNum, string sStr, key kID) {
         if ((iNum == CMD_OWNER)||(kID == g_kWearer)) {
             string sValueNotLower = llList2String(lParams, 1);
             if (sValue == "on") {
-				if (llGetAnimationOverride("Standing") != "") {
-                	g_iTweakPoseAO = 1;
-                	llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sSettingToken+"TweakPoseAO=1" , "");
-                	RefreshAnim();
-                	llMessageLinked(LINK_DIALOG, NOTIFY, "1"+"AntiSlide is now enabled.", kID);
+                if (llGetAnimationOverride("Standing") != "") {
+                    g_iTweakPoseAO = 1;
+                    llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sSettingToken+"TweakPoseAO=1" , "");
+                    RefreshAnim();
+                    llMessageLinked(LINK_DIALOG, NOTIFY, "1"+"AntiSlide is now enabled.", kID);
                 } else llMessageLinked(LINK_DIALOG, NOTIFY, "1"+"\n\nAntiSlide can't be used when a server-side AO is already running. If you are wearing the OpenCollar AO, it will take care of this functionality on its own and AntiSlide is not required. www.opencollar.at/ao\n", kID);
             } else if (sValue == "off") {
                 g_iTweakPoseAO = 0;
