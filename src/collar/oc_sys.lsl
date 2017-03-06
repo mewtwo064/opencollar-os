@@ -21,7 +21,11 @@
 //                    |     .'    ~~~~       \    / :                       //
 //                     \.. /               `. `--' .'                       //
 //                        |                  ~----~                         //
+<<<<<<< HEAD
 //                           System - 170301.1                              //
+=======
+//                           System - 170306.1                              //
+>>>>>>> 3530a79b... More web repo work
 // ------------------------------------------------------------------------ //
 //  Copyright (c) 2008 - 2016 Nandana Singh, Garvin Twine, Cleo Collins,    //
 //  Satomi Ahn, Joy Stipe, Wendy Starfall, littlemousy, Romka Swallowtail,  //
@@ -48,7 +52,7 @@
 //  future, then "full perms" will mean the most permissive possible set    //
 //  of permissions allowed by the platform.                                 //
 // ------------------------------------------------------------------------ //
-//       https://github.com/lickx/opencollar-os/tree/master/src/collar      //
+//                 https://github.com/lickx/opencollar-os                   //
 // ------------------------------------------------------------------------ //
 //////////////////////////////////////////////////////////////////////////////
 
@@ -113,7 +117,7 @@ string GIVECARD = "Help";
 string HELPCARD = ".help";
 string CONTACT = "Contact";
 string LICENSE = "License";
-string HTTP_TYPE = ".txt"; // can be raw, text/plain or text/*
+string HTTP_TYPE = ""; // can be raw, text/plain or text/*
 key g_kWebLookup;
 key g_kCurrentUser;
 
@@ -267,7 +271,7 @@ HelpMenu(key kID, integer iAuth) {
 
 MainMenu(key kID, integer iAuth) {
     string sPrompt = "\nO  s  C  o  l  l  a  r    S  i  x™\t"+g_sCollarVersion;
-    if(!g_iLatestVersion) sPrompt+="\n\nUPDATE AVAILABLE: A new patch has been released.\nPlease install at your earliest convenience. Thanks!\n\nwww.opencollar.at/updates";
+    if(!g_iLatestVersion) sPrompt+="\n\nUPDATE AVAILABLE: A new patch has been released.\nPlease install at your earliest convenience. Thanks!\n\nhttp://opensimworld.com/hop/77066-Kinky-Hub";
     //Debug("max memory used: "+(string)llGetSPMaxMemory());
     list lStaticButtons=["Apps"];
     if (g_iAnimsMenu) lStaticButtons+="Animations";
@@ -318,7 +322,7 @@ UserCommand(integer iNum, string sStr, key kID, integer fromMenu) {
     else if (sStr == "settings") {
         if (iNum == CMD_OWNER || iNum == CMD_WEARER) SettingsMenu(kID, iNum);
     } else if (sStr == "contact") {
-        g_kWebLookup = llHTTPRequest(g_sWeb+"contact"+HTTP_TYPE, [HTTP_METHOD, "GET", HTTP_VERBOSE_THROTTLE, FALSE], "");
+        g_kWebLookup = llHTTPRequest(g_sWeb+"~contact"+HTTP_TYPE, [HTTP_METHOD, "GET", HTTP_VERBOSE_THROTTLE, FALSE], "");
         g_kCurrentUser = kID;
         if (fromMenu) HelpMenu(kID, iNum);
     } else if (sCmd == "menuto") {
@@ -374,10 +378,10 @@ UserCommand(integer iNum, string sStr, key kID, integer fromMenu) {
             } else if (sStr=="news on"){
                 g_iNews=TRUE;
                 g_sLastNewsTime="0";
-                news_request = llHTTPRequest(g_sWeb+"news"+HTTP_TYPE, [HTTP_METHOD, "GET", HTTP_VERBOSE_THROTTLE, FALSE], "");
+                news_request = llHTTPRequest(g_sWeb+"~news"+HTTP_TYPE, [HTTP_METHOD, "GET", HTTP_VERBOSE_THROTTLE, FALSE], "");
             } else {
                 g_sLastNewsTime="0";
-                news_request = llHTTPRequest(g_sWeb+"news"+HTTP_TYPE, [HTTP_METHOD, "GET", HTTP_VERBOSE_THROTTLE, FALSE], "");
+                news_request = llHTTPRequest(g_sWeb+"~news"+HTTP_TYPE, [HTTP_METHOD, "GET", HTTP_VERBOSE_THROTTLE, FALSE], "");
             }
         } else llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"%NOACCESS%",kID);
         if (fromMenu) HelpMenu(kID, iNum);
@@ -555,7 +559,7 @@ RebuildMenu() {
 }
 
 init (){
-    github_version_request = llHTTPRequest(g_sWeb+"version"+HTTP_TYPE, [HTTP_METHOD, "GET", HTTP_VERBOSE_THROTTLE, FALSE], "");
+    github_version_request = llHTTPRequest(g_sWeb+"~version"+HTTP_TYPE, [HTTP_METHOD, "GET", HTTP_VERBOSE_THROTTLE, FALSE], "");
     g_iWaitRebuild = TRUE;JB();
     FailSafe();
     llSetTimerEvent(1.0);
@@ -572,7 +576,7 @@ default
     state_entry() {
         g_kWearer = llGetOwner();
         if (!llGetStartParameter())
-            news_request = llHTTPRequest(g_sWeb+"news"+HTTP_TYPE, [HTTP_METHOD, "GET", HTTP_VERBOSE_THROTTLE, FALSE], "");
+            news_request = llHTTPRequest(g_sWeb+"~news"+HTTP_TYPE, [HTTP_METHOD, "GET", HTTP_VERBOSE_THROTTLE, FALSE], "");
         BuildLockElementList();
         init();
         //Debug("Starting, max memory used: "+(string)llGetSPMaxMemory());
@@ -710,7 +714,7 @@ default
             else if (sToken == g_sGlobalToken+"news") g_iNews = (integer)sValue;
             else if (sToken == "intern_dist") g_sOtherDist = sValue;
             else if (sStr == "settings=sent") {
-                if (g_iNews) news_request = llHTTPRequest(g_sWeb+"news"+HTTP_TYPE, [HTTP_METHOD, "GET", HTTP_VERBOSE_THROTTLE, FALSE], "");
+                if (g_iNews) news_request = llHTTPRequest(g_sWeb+"~news"+HTTP_TYPE, [HTTP_METHOD, "GET", HTTP_VERBOSE_THROTTLE, FALSE], "");
             }
         } else if (iNum == DIALOG_TIMEOUT) {
             integer iMenuIndex = llListFindList(g_lMenuIDs, [kID]);
@@ -757,7 +761,7 @@ default
             g_sDistributor = sData;
             if (sData == "") g_iOffDist = 0;
             if (g_iOffDist)
-                g_kDistCheck = llHTTPRequest(g_sWeb+"distributor"+HTTP_TYPE, [HTTP_METHOD, "GET", 2, 16384,  HTTP_VERBOSE_THROTTLE, FALSE], "");
+                g_kDistCheck = llHTTPRequest(g_sWeb+"~distributor"+HTTP_TYPE, [HTTP_METHOD, "GET", 2, 16384,  HTTP_VERBOSE_THROTTLE, FALSE], "");
         }
     }
     attach(key kID) {
@@ -819,7 +823,7 @@ default
             g_iWaitUpdate = FALSE;
             llListenRemove(g_iUpdateHandle);
             if (!g_iWillingUpdaters) {   //if no updaters responded, get upgrader info from web and remenu
-                g_kWebLookup = llHTTPRequest(g_sWeb+"update"+HTTP_TYPE, [HTTP_METHOD, "GET", HTTP_VERBOSE_THROTTLE, FALSE], "");
+                g_kWebLookup = llHTTPRequest(g_sWeb+"~update"+HTTP_TYPE, [HTTP_METHOD, "GET", HTTP_VERBOSE_THROTTLE, FALSE], "");
                 if (g_iUpdateFromMenu) HelpMenu(g_kCurrentUser,g_iUpdateAuth);
             } else if (g_iWillingUpdaters > 1) {    //if too many updaters, PANIC!
                 llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Multiple updaters were found nearby. Please remove all but one and try again.",g_kCurrentUser);
